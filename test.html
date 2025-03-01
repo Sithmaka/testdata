@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Free Data Promotion - Sri Lanka</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Added for mobile responsiveness -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+        h2 {
+            color: #002147;
+        }
+        button {
+            padding: 12px 25px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #c9a031;
+            color: white;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #b28c28;
+        }
+        select, input {
+            padding: 12px;
+            font-size: 14px;
+            margin: 10px 0;
+            width: calc(100% - 24px); /* Ensures inputs fit well in smaller screens */
+            max-width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #wheel {
+            width: 250px;
+            height: 250px;
+            border: 10px solid #c9a031;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 250px;
+            font-size: 24px;
+            margin: 20px auto;
+            cursor: pointer;
+            background: white;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .section {
+            display: none;
+        }
+        .visible {
+            display: block;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+                width: 95%;
+            }
+            h2 {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+            button {
+                padding: 10px 18px;
+                font-size: 14px;
+                margin: 5px;
+            }
+            input, select {
+                padding: 10px;
+                font-size: 14px;
+            }
+            #wheel {
+                width: 200px;
+                height: 200px;
+                line-height: 200px;
+                font-size: 20px;
+            }
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJiVckTo7yWxqCc39EyfNpzXB0MM8e5cM",
+            authDomain: "freedatapromotion.firebaseapp.com",
+            projectId: "freedatapromotion",
+            storageBucket: "freedatapromotion.firebasestorage.app",
+            messagingSenderId: "946614688860",
+            appId: "1:946614688860:web:bac52a41239c8bb7059a99"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentSection = 'languageSection';
+        let userMobile = null;
+        let shareCount = 0;
+        const prizes = ['10GB', '20GB', '50GB', '1GB', '0GB - Try Again'];
+
+        function showSection(sectionId) {
+            document.getElementById(currentSection).classList.remove('visible');
+            document.getElementById(sectionId).classList.add('visible');
+            currentSection = sectionId;
+        }
+
+        window.selectLanguage = function(lang) {
+            localStorage.setItem('language', lang);
+            showSection('infoSection');
+        }
+
+        window.saveUserInfo = async function() {
+            const name = document.getElementById('name').value;
+            userMobile = document.getElementById('mobile').value.trim();
+
+            userMobile = normalizeMobileNumber(userMobile);
+
+            if (!validateMobileNumber(userMobile)) {
+                alert("Please enter a valid mobile number starting with +947XXXXXXXX.");
+                return;
+            }
+
+            const refSource = document.getElementById('refSource').value;
+
+            localStorage.setItem('userName', name);
+            localStorage.setItem('userMobile', userMobile);
+            localStorage.setItem('refSource', refSource);
+
+            await setDoc(doc(db, "users", userMobile), {
+                name, mobile: userMobile, refSource,
+                createdAt: new Date().toISOString()
+            }, { merge: true });
+
+            await setDoc(doc(db, "referrals", userMobile), { count: 0 }, { merge: true });
+
+            await updateShareProgress();
+            showSection('shareSection');
+        }
+
+        window.copyReferralLink = function() {
+            const referralLink = `${window.location.origin}${window.location.pathname}?ref=${userMobile}`;
+            navigator.clipboard.writeText(referralLink);
+            alert('Referral link copied!');
+        }
+
+        async function updateShareProgress() {
+            const refDoc = await getDoc(doc(db, "referrals", userMobile));
+            shareCount = refDoc.exists() ? refDoc.data().count : 0;
+
+            document.getElementById('shareProgress').innerText = `${shareCount}/10 Completed`;
+            document.getElementById('nextToSpin').disabled = (shareCount < 10);
+        }
+
+        window.goToSpin = function() {
+            showSection('spinSection');
+        }
+
+        document.getElementById('wheel').onclick = function() {
+            const prize = prizes[Math.floor(Math.random() * prizes.length)];
+            document.getElementById('prizeAmount').innerText = prize;
+            showSection('prizeSection');
+        }
+
+        function validateMobileNumber(number) {
+            return /^\+947\d{8}$/.test(number);
+        }
+
+        function normalizeMobileNumber(number) {
+            return number.replace(/\s+/g, '').replace(/^94/, '+94');
+        }
+
+        function setupMobileInput() {
+            const input = document.getElementById('mobile');
+            input.value = '+94';
+            input.addEventListener('input', () => validateMobile(input));
+        }
+
+        function validateMobile(input) {
+            input.value = input.value.replace(/[^\d+]/g, '');
+            if (!input.value.startsWith('+94')) input.value = '+94';
+            const after = input.value.slice(3);
+            if (after.length > 9) input.value = '+94' + after.slice(0, 9);
+            if (after.length > 0 && after[0] !== '7') {
+                alert("Mobile number must start with '7' after +94.");
+                input.value = '+94';
+            }
+        }
+
+        window.onload = async function() {
+            await checkReferral();
+            userMobile = localStorage.getItem('userMobile');
+            if (userMobile) {
+                await updateShareProgress();
+                showSection('shareSection');
+            } else {
+                showSection('languageSection');
+            }
+            setupMobileInput();
+        };
+
+        async function checkReferral() {
+            const params = new URLSearchParams(window.location.search);
+            let referrer = params.get('ref');
+
+            if (referrer) {
+                referrer = normalizeMobileNumber(referrer);
+                if (validateMobileNumber(referrer)) {
+                    await updateDoc(doc(db, "referrals", referrer), { count: increment(1) })
+                        .catch(() => setDoc(doc(db, "referrals", referrer), { count: 1 }));
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div id="languageSection" class="section visible">
+            <h2>Select Language</h2>
+            <button onclick="selectLanguage('en')">English</button>
+            <button onclick="selectLanguage('si')">සිංහල</button>
+            <button onclick="selectLanguage('ta')">தமிழ்</button>
+        </div>
+    
+        <div id="infoSection" class="section">
+            <h2>Enter Your Details</h2>
+            <input id="name" placeholder="Name"><br>
+            <input id="mobile" placeholder="Mobile"><br>
+            <select id="refSource">
+                <option>WhatsApp</option><option>Facebook</option><option>SMS</option><option>Instagram</option>
+            </select>
+            <button onclick="saveUserInfo()">Next</button>
+        </div>
+    
+        <div id="shareSection" class="section">
+            <h2>Share to Win</h2>
+            <p id="shareProgress">Loading...</p>
+            <button onclick="copyReferralLink()">📎 Copy Link</button>
+            <button onclick="updateShareProgress()">🔄 Refresh</button>
+            <button id="nextToSpin" onclick="goToSpin()" disabled>Spin</button>
+        </div>
+    
+        <div id="spinSection" class="section">
+            <div id="wheel">SPIN</div>
+        </div>
+    
+        <div id="prizeSection" class="section">
+            <h2>Congratulations!</h2>
+            <p>You won <span id="prizeAmount"></span></p>
+        </div>
+    </div>
+</body>
+</html>
