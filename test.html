@@ -97,6 +97,95 @@
                 font-size: 20px;
             }
         }
+        /* Celebration Container */
+        .celebration-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            animation: popIn 0.8s ease-out;
+            width: 90%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        h2.congrats-text {
+            font-size: 28px;
+            color: #002147;
+            font-weight: bold;
+            margin: 0;
+            animation: bounce 1.5s infinite;
+        }
+
+        .prize-amount {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #FFD700, #FF6347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 15px 0;
+        }
+
+        .note {
+            font-size: 14px;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        /* Celebration Animations */
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background: #FFD700;
+            border-radius: 50%;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0); }
+            100% { transform: translateY(100vh) rotate(720deg); }
+        }
+
+        .confetti:nth-child(2n) { background: #FF6347; }
+        .confetti:nth-child(3n) { background: #8A2BE2; }
+        .confetti:nth-child(4n) { background: #32CD32; }
+
+        /* Mobile Optimization */
+        @media (max-width: 600px) {
+            .celebration-container {
+                width: 95%;
+                padding: 20px;
+            }
+
+            h2.congrats-text {
+                font-size: 22px;
+            }
+
+            .prize-amount {
+                font-size: 20px;
+            }
+
+            .note {
+                font-size: 12px;
+            }
+        }
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -267,8 +356,14 @@
         </div>
     
         <div id="prizeSection" class="section">
-            <h2>Congratulations!</h2>
-            <p>You won <span id="prizeAmount"></span></p>
+            <h2 class="congrats-text">🎉 Congratulations! 🎉</h2>
+            <p>You won <span class="prize-amount" id="prizeAmount"></span></p>
+            <!-- Confetti Elements (can be repeated for more) -->
+            <div class="confetti" style="left: 10%; animation-duration: 3s;"></div>
+            <div class="confetti" style="left: 30%; animation-duration: 3.5s;"></div>
+            <div class="confetti" style="left: 50%; animation-duration: 4s;"></div>
+            <div class="confetti" style="left: 70%; animation-duration: 3.2s;"></div>
+            <div class="confetti" style="left: 90%; animation-duration: 3.8s;"></div>
         </div>
     </div>
 </body>
